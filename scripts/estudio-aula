@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Launcher used by the GNOME menu entry. Falls back to --no-sandbox only if Chromium's
+# sandbox cannot start (e.g. Ubuntu's AppArmor user-namespace restriction).
+set -u
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+ELECTRON="$DIR/node_modules/electron/dist/electron"
+LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/estudio-aula"
+LOG="$LOG_DIR/launch.log"
+mkdir -p "$LOG_DIR"
+
+"$ELECTRON" "$DIR" "$@" 2>"$LOG"
+code=$?
+if [ "$code" -ne 0 ] && grep -qiE 'sandbox' "$LOG"; then
+  echo "[$(date -Is)] sandbox indisponível, abrindo com --no-sandbox" >>"$LOG"
+  exec "$ELECTRON" --no-sandbox "$DIR" "$@" 2>>"$LOG"
+fi
+exit "$code"
